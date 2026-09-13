@@ -1,0 +1,1514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explore Kolkata — Final Pro Story Map</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+:root {
+  --accent:#c18a58;
+  --panel:#0b1219;
+  --panel2:#121b24;
+  --text:#f8fafc;
+  --muted:#b8c3d1;
+  --shadow:0 24px 60px rgba(0,0,0,.30);
+  --border:1px solid rgba(255,255,255,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:#071018;color:var(--text);overflow:hidden}
+body{letter-spacing:.1px}
+.app{display:grid;grid-template-columns:minmax(0,58%) minmax(420px,42%);height:100vh;background:#071018}
+@media (max-width:980px){
+  html,body{overflow:auto}
+  .app{grid-template-columns:1fr;grid-template-rows:52vh auto;height:auto;min-height:100vh}
+}
+
+.map-wrap{position:relative;background:#dbe5ef}
+#map{width:100%;height:100%}
+.map-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset -60px 0 110px rgba(0,0,0,.18)}
+.overlay-top{position:absolute;top:16px;left:16px;right:16px;z-index:1100;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.brand,.control-panel,.route-pill,.legend{pointer-events:auto;background:rgba(8,14,20,.84);backdrop-filter:blur(16px);border:var(--border);box-shadow:var(--shadow);color:#fff}
+.brand{padding:12px 14px;border-radius:16px;min-width:220px}
+.brand small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.18em;font-weight:800;color:#ced7e3}
+.brand strong{display:block;margin-top:4px;font-size:19px}
+.control-panel{margin-left:auto;padding:12px;border-radius:16px;width:min(360px,52vw)}
+.control-grid{display:grid;grid-template-columns:1fr 130px;gap:8px}
+.control-panel input,.control-panel select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;outline:none}
+.control-panel input::placeholder{color:#c5cfdb}
+.route-pill{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:1100;padding:11px 16px;border-radius:999px;font-size:12px;max-width:72%;text-align:center}
+.legend{position:absolute;left:16px;bottom:16px;z-index:1100;padding:12px 14px;border-radius:16px;min-width:240px;font-size:12px}
+.legend h4{margin:0 0 10px;font-size:13px}
+.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.legend-item{display:flex;align-items:center;gap:8px;color:#e9eef4}
+.legend-icon{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);font-size:11px}
+
+.panel{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel2));border-left:1px solid rgba(255,255,255,.08)}
+.panel-bg{position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(255,255,255,.06),transparent 38%),linear-gradient(180deg,rgba(255,255,255,.04),transparent 30%);pointer-events:none}
+.panel-inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+.panel-top{padding:20px 22px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#d6deea}
+.experience-name{margin-top:6px;font-size:14px;font-weight:700}
+.counter{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:var(--border);font-size:12px;color:#f6f8fb}
+
+.hero-card{margin:8px 22px 14px;border-radius:22px;overflow:hidden;position:relative;min-height:250px;background:#111;border:var(--border);box-shadow:var(--shadow)}
+.hero-card img{width:100%;height:250px;object-fit:cover;display:block;transform:scale(1.03);animation:kenburns 14s ease-in-out infinite alternate}
+.hero-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,8,14,.04),rgba(2,8,14,.28) 34%,rgba(2,8,14,.88) 100%)}
+.hero-copy{position:absolute;left:18px;right:18px;bottom:16px;z-index:2}
+.hero-copy .label{font-size:10px;text-transform:uppercase;letter-spacing:.16em;font-weight:800;color:#e1e7ee}
+.hero-copy .quote{margin-top:6px;font-size:19px;line-height:1.35;font-family:Georgia,"Times New Roman",serif;max-width:520px}
+@keyframes kenburns{from{transform:scale(1.03)}to{transform:scale(1.10)}}
+
+.content{flex:1;overflow:auto;padding:0 22px 12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.tag{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.tag-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+#placeName{margin:14px 0 6px;font-size:38px;line-height:1.02;font-family:Georgia,"Times New Roman",serif;font-weight:600}
+#zone{font-size:13px;color:var(--muted)}
+
+.section{margin-top:16px;padding:16px;border-radius:18px;background:rgba(255,255,255,.06);border:var(--border);box-shadow:0 10px 30px rgba(0,0,0,.14)}
+.section-title{margin-bottom:8px;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#ead9c5}
+.speciality{font-size:17px;line-height:1.55;font-weight:700}
+.description{font-size:14px;line-height:1.72;color:#e2e8ef}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.meta-card{padding:13px 14px;border-radius:15px;background:rgba(255,255,255,.05);border:var(--border)}
+.meta-card b{display:block;margin-bottom:4px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#bfc9d7}
+.meta-card span{font-size:12px}
+
+.anim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media (max-width:520px){.anim-grid{grid-template-columns:1fr}}
+.anim-box{padding:14px;border-radius:18px;background:rgba(255,255,255,.06);border:var(--border);min-height:170px;position:relative;overflow:hidden}
+.anim-head{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#ead9c5;margin-bottom:8px}
+.anim-scene{position:absolute;inset:42px 12px 12px 12px;display:flex;align-items:center;justify-content:center;perspective:1000px}
+.anim-caption{position:absolute;left:14px;right:14px;bottom:12px;font-size:12px;color:#dde6f1}
+.photo-source{margin-top:10px;font-size:10px;color:#9fb0c2}
+.photo-source a{color:#dbe5f0}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 22px 22px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.18))}
+.nav button{padding:14px 14px;border-radius:14px;border:none;font-weight:800;font-size:14px;cursor:pointer;transition:.18s ease}
+#prevBtn{background:rgba(255,255,255,.08);color:#fff;border:var(--border)}
+#nextBtn{background:var(--accent);color:#091018;box-shadow:0 14px 26px rgba(0,0,0,.16)}
+.nav button:hover{transform:translateY(-1px);filter:brightness(1.03)}
+
+/* animation scenes */
+.float-y{animation:floatY 3.2s ease-in-out infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.scene-biryani .bowl{position:relative;width:155px;height:95px;transform-style:preserve-3d}
+.scene-biryani .rice{position:absolute;left:12px;right:12px;top:6px;height:45px;border-radius:50%;background:radial-gradient(circle at 50% 30%,#f8d36e,#eba44c 68%,#a95820 100%);box-shadow:inset 0 -12px 18px rgba(0,0,0,.15),0 18px 28px rgba(0,0,0,.26)}
+.scene-biryani .base{position:absolute;left:26px;right:26px;top:34px;height:48px;border-radius:0 0 42px 42px/0 0 30px 30px;background:linear-gradient(180deg,#73859c,#394a5d);box-shadow:0 18px 22px rgba(0,0,0,.30)}
+.scene-biryani .steam{position:absolute;width:22px;height:44px;border:2px solid rgba(255,255,255,.45);border-color:rgba(255,255,255,.5) transparent transparent transparent;border-radius:50%;top:-8px;opacity:0;animation:steam 2.6s ease-in-out infinite}
+.scene-biryani .steam.s1{left:32px}.scene-biryani .steam.s2{left:66px;animation-delay:.7s}.scene-biryani .steam.s3{left:98px;animation-delay:1.2s}
+@keyframes steam{0%{transform:translateY(18px) scale(.9);opacity:0}35%{opacity:.8}100%{transform:translateY(-26px) scale(1.15);opacity:0}}
+
+.scene-diya .ring{position:absolute;width:140px;height:140px;border-radius:50%;border:1px solid rgba(255,219,134,.28);box-shadow:0 0 30px rgba(255,192,91,.16);animation:pulseGlow 2.8s ease-in-out infinite}
+.scene-diya .lamp{position:relative;width:180px;height:130px}
+.scene-diya .bowl{position:absolute;left:35px;right:35px;bottom:24px;height:42px;border-radius:0 0 70px 70px/0 0 40px 40px;background:linear-gradient(180deg,#d78542,#713b14);box-shadow:0 18px 26px rgba(0,0,0,.32)}
+.scene-diya .bowl:before{content:"";position:absolute;left:8px;right:8px;top:-10px;height:22px;border-radius:50%;background:linear-gradient(180deg,#eab06e,#b96d2a)}
+.scene-diya .flame{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);width:30px;height:54px;background:radial-gradient(circle at 50% 26%,#fff4b5,#ffc44f 50%,#ff7c1a 72%,transparent 74%);clip-path:polygon(50% 0%,74% 30%,88% 58%,68% 100%,50% 84%,32% 100%,12% 58%,26% 30%);filter:drop-shadow(0 0 20px rgba(255,159,28,.55));animation:flicker 1.5s ease-in-out infinite}
+.scene-diya .spark{position:absolute;width:5px;height:5px;background:#ffd37a;border-radius:50%;box-shadow:0 0 12px #ffd37a;animation:sparkUp 2.2s linear infinite}
+.scene-diya .spark.s1{left:65px;bottom:72px}.scene-diya .spark.s2{left:92px;bottom:78px;animation-delay:.8s}.scene-diya .spark.s3{left:112px;bottom:68px;animation-delay:1.4s}
+@keyframes flicker{0%,100%{transform:translateX(-50%) scale(1) rotate(-1deg)}50%{transform:translateX(-50%) scale(1.07) rotate(2deg)}}
+@keyframes sparkUp{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-42px);opacity:0}}
+@keyframes pulseGlow{0%,100%{transform:scale(.96);opacity:.5}50%{transform:scale(1.03);opacity:1}}
+
+.scene-panda .wrap{position:relative;width:140px;height:140px}
+.scene-panda .head{position:absolute;inset:18px;background:#fff;border-radius:50%;box-shadow:0 18px 26px rgba(0,0,0,.26)}
+.scene-panda .ear,.scene-panda .ear2{position:absolute;width:42px;height:42px;background:#14181d;border-radius:50%;top:0}
+.scene-panda .ear{left:22px}.scene-panda .ear2{right:22px}
+.scene-panda .eye,.scene-panda .eye2{position:absolute;top:48px;width:26px;height:36px;background:#14181d;border-radius:50%;transform:rotate(22deg)}
+.scene-panda .eye{left:40px}.scene-panda .eye2{right:40px;transform:rotate(-22deg)}
+.scene-panda .eye:after,.scene-panda .eye2:after{content:"";position:absolute;left:9px;top:10px;width:7px;height:7px;border-radius:50%;background:#fff}
+.scene-panda .nose{position:absolute;left:50%;top:84px;transform:translateX(-50%);width:14px;height:10px;border-radius:50%;background:#14181d}
+.scene-panda .mouth{position:absolute;left:50%;top:94px;transform:translateX(-50%);width:32px;height:18px;border:3px solid #14181d;border-color:transparent transparent #14181d transparent;border-radius:0 0 22px 22px}
+.scene-panda .paw{position:absolute;width:18px;height:28px;background:#14181d;border-radius:14px;right:-2px;top:64px;transform-origin:top center;animation:wave 1s ease-in-out infinite}
+.scene-panda .speech{position:absolute;right:-34px;top:2px;min-width:120px;background:#fff;color:#111;padding:10px 12px;border-radius:16px;font-size:13px;font-weight:700;box-shadow:0 16px 26px rgba(0,0,0,.2)}
+.scene-panda .speech:after{content:"";position:absolute;left:16px;bottom:-10px;border:10px solid transparent;border-top-color:#fff}
+@keyframes wave{0%,100%{transform:rotate(8deg)}50%{transform:rotate(28deg)}}
+
+.scene-durga .wrap{position:relative;width:165px;height:150px}
+.scene-durga .crown{position:absolute;left:50%;top:4px;transform:translateX(-50%);width:118px;height:64px;background:linear-gradient(180deg,#f2cc68,#a3661d);clip-path:polygon(50% 0%,62% 22%,74% 5%,84% 28%,100% 20%,87% 48%,94% 72%,75% 62%,68% 100%,50% 80%,32% 100%,25% 62%,6% 72%,13% 48%,0 20%,16% 28%,26% 5%,38% 22%);box-shadow:0 14px 26px rgba(0,0,0,.28)}
+.scene-durga .face{position:absolute;left:50%;top:50px;transform:translateX(-50%);width:84px;height:96px;border-radius:48% 48% 44% 44%;background:linear-gradient(180deg,#ffd9b1,#f1bc8d);box-shadow:0 14px 22px rgba(0,0,0,.22)}
+.scene-durga .bindi{position:absolute;left:50%;top:22px;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:#c7182c;box-shadow:0 0 10px rgba(199,24,44,.55)}
+.scene-durga .eyeL,.scene-durga .eyeR{position:absolute;top:38px;width:18px;height:9px;border-top:3px solid #2a1c14;border-radius:50%}
+.scene-durga .eyeL{left:18px;transform:rotate(-10deg)} .scene-durga .eyeR{right:18px;transform:rotate(10deg)}
+.scene-durga .nose{position:absolute;left:50%;top:48px;transform:translateX(-50%);width:2px;height:26px;background:rgba(83,46,21,.35)}
+.scene-durga .lip{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:28px;height:10px;border-bottom:3px solid #a21d34;border-radius:0 0 20px 20px}
+
+.scene-atom .atom{position:relative;width:140px;height:140px}
+.scene-atom .center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#89d5ff;box-shadow:0 0 20px #89d5ff}
+.scene-atom .orbit,.scene-atom .orbit2,.scene-atom .orbit3{position:absolute;inset:16px;border:2px solid rgba(137,213,255,.32);border-radius:50%;animation:spin 5s linear infinite}
+.scene-atom .orbit2{transform:rotate(60deg)} .scene-atom .orbit3{transform:rotate(-60deg)}
+.scene-atom .electron{position:absolute;left:50%;top:5px;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 16px #fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.scene-leaf .leaf{position:absolute;font-size:28px;opacity:.92;animation:fall 5s linear infinite}
+.scene-leaf .l1{left:16%;top:-10px} .scene-leaf .l2{left:48%;top:-26px;animation-delay:1.4s} .scene-leaf .l3{left:72%;top:-18px;animation-delay:2.6s}
+@keyframes fall{to{transform:translate(40px,120px) rotate(220deg);opacity:.35}}
+
+.scene-zakaria .wrap{position:relative;width:185px;height:120px}
+.scene-zakaria .neon{position:absolute;left:50%;top:0;transform:translateX(-50%);font-size:18px;font-weight:900;color:#ffd8aa;text-shadow:0 0 16px rgba(255,164,84,.72)}
+.scene-zakaria .skewer{position:absolute;left:48px;top:34px;width:92px;height:8px;background:#86542c;transform:rotate(-16deg);box-shadow:0 10px 20px rgba(0,0,0,.25)}
+.scene-zakaria .ball{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;background:#ad4a2a;box-shadow:inset 0 -4px 5px rgba(0,0,0,.16)}
+.scene-zakaria .k1{left:6px} .scene-zakaria .k2{left:29px} .scene-zakaria .k3{left:52px} .scene-zakaria .k4{left:75px}
+.scene-zakaria .tray{position:absolute;left:24px;right:24px;bottom:8px;height:38px;border-radius:14px;background:linear-gradient(180deg,#606977,#303945);box-shadow:0 18px 22px rgba(0,0,0,.24)}
+
+.scene-park .sun{position:absolute;top:10px;right:30px;width:44px;height:44px;border-radius:50%;background:#f7df95;box-shadow:0 0 24px rgba(247,223,149,.45)}
+.scene-park .hill{position:absolute;bottom:18px;width:120px;height:58px;border-radius:60px 60px 0 0;background:#6fa25c}
+.scene-park .hill.h2{left:58px;bottom:12px;background:#89b976} .scene-park .tree{position:absolute;left:68px;bottom:42px;width:16px;height:36px;background:#63452f} .scene-park .tree:before{content:"";position:absolute;left:-22px;bottom:16px;width:60px;height:46px;border-radius:50%;background:#58a06a}
+
+.scene-heritage .arch{position:relative;width:120px;height:135px;border:14px solid rgba(233,210,163,.70);border-bottom:0;border-radius:66px 66px 0 0;box-shadow:0 0 30px rgba(233,210,163,.10)}
+.scene-heritage .arch:before{content:"";position:absolute;left:24px;right:24px;bottom:-2px;height:90px;border:10px solid rgba(233,210,163,.30);border-bottom:0;border-radius:44px 44px 0 0}
+
+.scene-wave .line{position:absolute;left:-8%;width:116%;height:30px;border-radius:50%;background:rgba(89,183,208,.22);animation:waveMove 4.8s ease-in-out infinite alternate}
+.scene-wave .line.l2{bottom:34px;opacity:.6;animation-duration:6.2s} .scene-wave .line.l1{bottom:10px}
+@keyframes waveMove{from{transform:translateX(-2%)}to{transform:translateX(2%)}}
+.leaflet-routing-container{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="map-wrap">
+    <div id="map"></div>
+    <div class="overlay-top">
+      <div class="brand">
+        <small>Kolkata Tourism Story Map</small>
+        <strong>Explore Kolkata</strong>
+      </div>
+      <div class="control-panel">
+        <div class="control-grid">
+          <input id="searchInput" type="text" placeholder="Search a place, e.g. Prinsep Ghat">
+          <select id="categoryFilter">
+            <option value="all">All categories</option>
+            <option value="Heritage">Heritage</option>
+            <option value="Culture">Culture & Food</option>
+            <option value="Ghat & Riverside">Ghats & Riverside</option>
+            <option value="Religious">Religious</option>
+            <option value="Nature">Parks & Nature</option>
+            <option value="Science">Science & Museum</option>
+            <option value="Amusement">Amusement & Water Park</option>
+            <option value="Landmark">Landmarks</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="route-pill" id="routePill">Click a symbol on the map or use Next / Previous to travel through Kolkata.</div>
+    <div class="legend">
+      <h4>Map symbols</h4>
+      <div class="legend-grid" id="legendGrid"></div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-bg"></div>
+    <div class="panel-inner">
+      <div class="panel-top">
+        <div>
+          <div class="eyebrow">Immersive city journey</div>
+          <div class="experience-name" id="experienceName">Heritage & History</div>
+        </div>
+        <div class="counter" id="counter">1 / 1</div>
+      </div>
+
+      <div class="hero-card">
+        <img id="heroImage" alt="Selected Kolkata place">
+        <div class="hero-copy">
+          <div class="label" id="heroLabel">Curated visual story</div>
+          <div class="quote" id="heroQuote">A place-based journey through Kolkata.</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="tag"><span class="tag-dot"></span><span id="categoryText">Category</span></div>
+        <div id="placeName">Place Name</div>
+        <div id="zone">Zone</div>
+
+        <div class="section">
+          <div class="section-title">Why this place stands out</div>
+          <div class="speciality" id="speciality"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Story</div>
+          <div class="description" id="description"></div>
+          <div class="meta">
+            <div class="meta-card"><b>Best time</b><span id="bestTime"></span></div>
+            <div class="meta-card"><b>Coordinates</b><span id="coordinates"></span></div>
+          </div>
+        </div>
+
+        <div class="anim-grid">
+          <div class="anim-box">
+            <div class="anim-head">Animated welcome</div>
+            <div class="anim-scene" id="animScene"></div>
+            <div class="anim-caption" id="animCaption">Smooth themed animation appears here.</div>
+          </div>
+          <div class="anim-box">
+            <div class="anim-head">Quick travel note</div>
+            <div class="anim-caption" id="travelCaption" style="position:static;margin-top:6px;font-size:13px;line-height:1.65;color:#dde6f1">Follow the route on the map to move from one Kolkata experience to the next.</div>
+          </div>
+        </div>
+
+        <div class="photo-source">Photo source: <a id="photoLink" href="#" target="_blank" rel="noopener">Open image source</a></div>
+      </div>
+
+      <div class="nav">
+        <button id="prevBtn">← Previous place</button>
+        <button id="nextBtn">Next place →</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script>
+const touristData = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3426,
+          22.544800000000002
+        ]
+      },
+      "id": "0",
+      "properties": {
+        "best_time": "October to March",
+        "category": "Heritage",
+        "description": "Victoria Memorial is one of the most famous heritage attractions of Kolkata. It is known for its grand white marble architecture, museum galleries and beautiful gardens.",
+        "id": 1,
+        "latitude": 22.5448,
+        "longitude": 88.3426,
+        "name": "Victoria Memorial",
+        "speciality": "White marble monument, museum and iconic Kolkata landmark.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3507,
+          22.557899999999997
+        ]
+      },
+      "id": "1",
+      "properties": {
+        "best_time": "October to March",
+        "category": "Heritage",
+        "description": "The Indian Museum is one of the most important museums in Kolkata and is a major attraction for visitors interested in history, archaeology and culture.",
+        "id": 2,
+        "latitude": 22.5579,
+        "longitude": 88.3507,
+        "name": "Indian Museum",
+        "speciality": "Historic museum with archaeology, art and natural history collections.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3476,
+          22.544
+        ]
+      },
+      "id": "2",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Heritage",
+        "description": "St. Paul's Cathedral is a major historic church of Kolkata, known for its architecture and peaceful surroundings.",
+        "id": 3,
+        "latitude": 22.544,
+        "longitude": 88.3476,
+        "name": "St. Paul's Cathedral",
+        "speciality": "Historic cathedral with impressive Gothic-style architecture.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.36030000000001,
+          22.582300000000004
+        ]
+      },
+      "id": "3",
+      "properties": {
+        "best_time": "October to March",
+        "category": "Heritage",
+        "description": "Marble Palace is a nineteenth-century mansion in North Kolkata known for its architecture, sculptures, paintings and historic character.",
+        "id": 4,
+        "latitude": 22.5823,
+        "longitude": 88.3603,
+        "name": "Marble Palace",
+        "speciality": "Historic mansion famous for marble architecture and artwork.",
+        "zone": "North Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3598,
+          22.584500000000002
+        ]
+      },
+      "id": "4",
+      "properties": {
+        "best_time": "October to March",
+        "category": "Culture",
+        "description": "Jorasanko Thakurbari is an important centre of Bengali cultural history and is closely associated with Rabindranath Tagore.",
+        "id": 5,
+        "latitude": 22.5845,
+        "longitude": 88.3598,
+        "name": "Jorasanko Thakurbari",
+        "speciality": "Ancestral home of Rabindranath Tagore.",
+        "zone": "North Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3618,
+          22.546700000000005
+        ]
+      },
+      "id": "5",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Heritage",
+        "description": "South Park Street Cemetery provides a unique view into the colonial history of Kolkata through its historic tombs and architecture.",
+        "id": 6,
+        "latitude": 22.5467,
+        "longitude": 88.3618,
+        "name": "South Park Street Cemetery",
+        "speciality": "Historic colonial-era cemetery with old monuments and tombs.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3317,
+          22.556399999999996
+        ]
+      },
+      "id": "6",
+      "properties": {
+        "best_time": "4 PM to Sunset",
+        "category": "Ghat & Riverside",
+        "description": "Prinsep Ghat is one of the most scenic riverfront destinations in Kolkata. It is popular for boating, evening walks, photography and views of Vidyasagar Setu.",
+        "id": 7,
+        "latitude": 22.5564,
+        "longitude": 88.3317,
+        "name": "Prinsep Ghat",
+        "speciality": "Sunset, boating, photography and Hooghly River views.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.34470000000002,
+          22.5694
+        ]
+      },
+      "id": "7",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Ghat & Riverside",
+        "description": "Babughat is an important historic ghat that reflects everyday transport, religious activity and riverfront culture along the Hooghly River.",
+        "id": 8,
+        "latitude": 22.5694,
+        "longitude": 88.3447,
+        "name": "Babughat",
+        "speciality": "Historic river ghat, ferry activity and traditional Kolkata atmosphere.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.33950000000002,
+          22.560799999999997
+        ]
+      },
+      "id": "8",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Ghat & Riverside",
+        "description": "Outram Ghat is a scenic riverside place suitable for walking, relaxing and enjoying the Hooghly River.",
+        "id": 9,
+        "latitude": 22.5608,
+        "longitude": 88.3395,
+        "name": "Outram Ghat",
+        "speciality": "Peaceful riverfront, boating and evening views.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3532,
+          22.5728
+        ]
+      },
+      "id": "9",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Ghat & Riverside",
+        "description": "Armenian Ghat is connected with the historic river trade and commercial development of Kolkata.",
+        "id": 10,
+        "latitude": 22.5728,
+        "longitude": 88.3532,
+        "name": "Armenian Ghat",
+        "speciality": "Historic river ghat associated with old Kolkata trade.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3575,
+          22.594500000000004
+        ]
+      },
+      "id": "10",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Ghat & Riverside",
+        "description": "Ahiritola Ghat represents the traditional riverfront culture of North Kolkata and remains an important ferry point.",
+        "id": 11,
+        "latitude": 22.5945,
+        "longitude": 88.3575,
+        "name": "Ahiritola Ghat",
+        "speciality": "Traditional North Kolkata ghat and ferry activity.",
+        "zone": "North Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3656,
+          22.6033
+        ]
+      },
+      "id": "11",
+      "properties": {
+        "best_time": "Morning or Sunset",
+        "category": "Ghat & Riverside",
+        "description": "Bagbazar Ghat is associated with the traditional culture, religious activities and riverfront landscape of North Kolkata.",
+        "id": 12,
+        "latitude": 22.6033,
+        "longitude": 88.3656,
+        "name": "Bagbazar Ghat",
+        "speciality": "Historic riverfront location with cultural importance.",
+        "zone": "North Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3597,
+          22.5868
+        ]
+      },
+      "id": "12",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Ghat & Riverside",
+        "description": "Nimtala Ghat is one of the old and culturally important ghats of Kolkata.",
+        "id": 13,
+        "latitude": 22.5868,
+        "longitude": 88.3597,
+        "name": "Nimtala Ghat",
+        "speciality": "Historic ghat with major cultural and religious importance.",
+        "zone": "North Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.344,
+          22.572199999999995
+        ]
+      },
+      "id": "13",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Ghat & Riverside",
+        "description": "Millennium Park is a popular recreational space on the Kolkata riverfront with pleasant river views.",
+        "id": 14,
+        "latitude": 22.5722,
+        "longitude": 88.344,
+        "name": "Millennium Park",
+        "speciality": "Landscaped riverfront park with views of the Hooghly River.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3467,
+          22.585100000000004
+        ]
+      },
+      "id": "14",
+      "properties": {
+        "best_time": "Evening or Night",
+        "category": "Landmark",
+        "description": "Howrah Bridge crosses the Hooghly River and is one of the most recognizable landmarks associated with Kolkata.",
+        "id": 15,
+        "latitude": 22.5851,
+        "longitude": 88.3467,
+        "name": "Howrah Bridge",
+        "speciality": "Iconic cantilever bridge and symbol of Kolkata.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.31620000000001,
+          22.557699999999997
+        ]
+      },
+      "id": "15",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Landmark",
+        "description": "Vidyasagar Setu is a major modern landmark connecting Kolkata and Howrah across the Hooghly River.",
+        "id": 16,
+        "latitude": 22.5577,
+        "longitude": 88.3162,
+        "name": "Vidyasagar Setu",
+        "speciality": "Major cable-stayed bridge with scenic river views.",
+        "zone": "Riverfront"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3433,
+          22.5645
+        ]
+      },
+      "id": "16",
+      "properties": {
+        "best_time": "Match Day or Daytime",
+        "category": "Sports & Landmark",
+        "description": "Eden Gardens is one of the most famous cricket stadiums in India and an important sporting landmark of Kolkata.",
+        "id": 17,
+        "latitude": 22.5645,
+        "longitude": 88.3433,
+        "name": "Eden Gardens",
+        "speciality": "Historic international cricket stadium.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4692,
+          22.5798
+        ]
+      },
+      "id": "17",
+      "properties": {
+        "best_time": "Evening or Night",
+        "category": "Landmark",
+        "description": "Biswa Bangla Gate is a modern landmark representing the contemporary urban identity of New Town Kolkata.",
+        "id": 18,
+        "latitude": 22.5798,
+        "longitude": 88.4692,
+        "name": "Biswa Bangla Gate",
+        "speciality": "Modern architectural landmark of New Town.",
+        "zone": "New Town"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.342,
+          22.520499999999995
+        ]
+      },
+      "id": "18",
+      "properties": {
+        "best_time": "Early Morning",
+        "category": "Religious",
+        "description": "Kalighat Kali Temple is one of the most important religious and cultural destinations in Kolkata.",
+        "id": 19,
+        "latitude": 22.5205,
+        "longitude": 88.342,
+        "name": "Kalighat Kali Temple",
+        "speciality": "Major Hindu pilgrimage destination.",
+        "zone": "South Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3574,
+          22.654799999999998
+        ]
+      },
+      "id": "19",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Religious & Riverside",
+        "description": "Dakshineswar Kali Temple is a major spiritual destination known for its beautiful temple complex and riverside location.",
+        "id": 20,
+        "latitude": 22.6548,
+        "longitude": 88.3574,
+        "name": "Dakshineswar Kali Temple",
+        "speciality": "Famous Kali temple beside the Hooghly River.",
+        "zone": "North Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3568,
+          22.632599999999996
+        ]
+      },
+      "id": "20",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Religious & Riverside",
+        "description": "Belur Math is the headquarters of the Ramakrishna Mission and is known for its architecture and peaceful riverfront environment.",
+        "id": 21,
+        "latitude": 22.6326,
+        "longitude": 88.3568,
+        "name": "Belur Math",
+        "speciality": "Spiritual centre with a peaceful Hooghly River setting.",
+        "zone": "Howrah Riverside"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3652,
+          22.530499999999996
+        ]
+      },
+      "id": "21",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Religious",
+        "description": "Birla Mandir is known for its marble architecture and peaceful religious atmosphere.",
+        "id": 22,
+        "latitude": 22.5305,
+        "longitude": 88.3652,
+        "name": "Birla Mandir",
+        "speciality": "Beautiful modern Hindu temple.",
+        "zone": "South Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3563,
+          22.5772
+        ]
+      },
+      "id": "22",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Religious",
+        "description": "Nakhoda Masjid is a prominent religious and architectural landmark in central Kolkata.",
+        "id": 23,
+        "latitude": 22.5772,
+        "longitude": 88.3563,
+        "name": "Nakhoda Masjid",
+        "speciality": "One of the major mosques of Kolkata.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3627,
+          22.5984
+        ]
+      },
+      "id": "23",
+      "properties": {
+        "best_time": "August to October",
+        "category": "Culture",
+        "description": "Kumartuli is famous for skilled artisans who create clay idols, especially for Durga Puja.",
+        "id": 24,
+        "latitude": 22.5984,
+        "longitude": 88.3627,
+        "name": "Kumartuli",
+        "speciality": "Traditional clay idol-making neighbourhood.",
+        "zone": "North Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.363,
+          22.5763
+        ]
+      },
+      "id": "24",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Culture",
+        "description": "College Street is famous for its large book market, educational institutions and intellectual history.",
+        "id": 25,
+        "latitude": 22.5763,
+        "longitude": 88.363,
+        "name": "College Street",
+        "speciality": "Historic book market and academic district.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3639,
+          22.5765
+        ]
+      },
+      "id": "25",
+      "properties": {
+        "best_time": "Afternoon",
+        "category": "Culture & Food",
+        "description": "Indian Coffee House on College Street is deeply connected with the literary and intellectual culture of Kolkata.",
+        "id": 26,
+        "latitude": 22.5765,
+        "longitude": 88.3639,
+        "name": "Indian Coffee House",
+        "speciality": "Historic meeting place for students, writers and intellectuals.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3523,
+          22.551000000000002
+        ]
+      },
+      "id": "26",
+      "properties": {
+        "best_time": "Evening or Night",
+        "category": "Food & Lifestyle",
+        "description": "Park Street is one of the best-known entertainment and dining districts of Kolkata.",
+        "id": 27,
+        "latitude": 22.551,
+        "longitude": 88.3523,
+        "name": "Park Street",
+        "speciality": "Restaurants, nightlife, Christmas lights and city culture.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3525,
+          22.559699999999996
+        ]
+      },
+      "id": "27",
+      "properties": {
+        "best_time": "Afternoon or Evening",
+        "category": "Shopping",
+        "description": "New Market is a popular shopping destination for clothing, food, accessories and traditional market experiences.",
+        "id": 28,
+        "latitude": 22.5597,
+        "longitude": 88.3525,
+        "name": "New Market",
+        "speciality": "Historic and popular shopping market.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3325,
+          22.512400000000003
+        ]
+      },
+      "id": "28",
+      "properties": {
+        "best_time": "Early Morning",
+        "category": "Nature & Park",
+        "description": "Rabindra Sarobar is a major green and recreational space in South Kolkata, popular for walking and nature.",
+        "id": 29,
+        "latitude": 22.5124,
+        "longitude": 88.3325,
+        "name": "Rabindra Sarobar",
+        "speciality": "Urban lake, greenery, birdlife and peaceful walking environment.",
+        "zone": "South Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.339,
+          22.5545
+        ]
+      },
+      "id": "29",
+      "properties": {
+        "best_time": "Morning or Evening",
+        "category": "Nature & Park",
+        "description": "The Maidan is one of the largest urban green spaces in Kolkata and is surrounded by several major landmarks.",
+        "id": 30,
+        "latitude": 22.5545,
+        "longitude": 88.339,
+        "name": "Maidan",
+        "speciality": "Large open green space in the centre of Kolkata.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.332,
+          22.5355
+        ]
+      },
+      "id": "30",
+      "properties": {
+        "best_time": "Winter Morning",
+        "category": "Nature & Family",
+        "description": "Alipore Zoo is a major family attraction in Kolkata featuring different animals and landscaped surroundings.",
+        "id": 31,
+        "latitude": 22.5355,
+        "longitude": 88.332,
+        "name": "Alipore Zoo",
+        "speciality": "Historic zoological garden and family attraction.",
+        "zone": "South Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.2865,
+          22.558
+        ]
+      },
+      "id": "31",
+      "properties": {
+        "best_time": "Morning",
+        "category": "Nature & Park",
+        "description": "The Acharya Jagadish Chandra Bose Indian Botanic Garden is known for its plant diversity and famous Great Banyan Tree.",
+        "id": 32,
+        "latitude": 22.558,
+        "longitude": 88.2865,
+        "name": "Indian Botanic Garden",
+        "speciality": "Historic botanical garden and famous Great Banyan Tree.",
+        "zone": "Howrah"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4669,
+          22.6008
+        ]
+      },
+      "id": "32",
+      "properties": {
+        "best_time": "Evening",
+        "category": "Nature & Recreation",
+        "description": "Eco Park is one of the largest recreational destinations in the Kolkata metropolitan area, popular for boating, cycling, gardens and leisure.",
+        "id": 33,
+        "latitude": 22.6008,
+        "longitude": 88.4669,
+        "name": "Eco Park",
+        "speciality": "Large urban recreational park with lake, gardens and activities.",
+        "zone": "New Town"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3958,
+          22.539600000000004
+        ]
+      },
+      "id": "33",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Science & Family",
+        "description": "Science City is one of Kolkata most popular educational and family destinations.",
+        "id": 34,
+        "latitude": 22.5396,
+        "longitude": 88.3958,
+        "name": "Science City",
+        "speciality": "Interactive science exhibits and educational attractions.",
+        "zone": "East Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3463,
+          22.5455
+        ]
+      },
+      "id": "34",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Science & Family",
+        "description": "Birla Planetarium is a popular educational attraction where visitors can learn about astronomy and space.",
+        "id": 35,
+        "latitude": 22.5455,
+        "longitude": 88.3463,
+        "name": "Birla Planetarium",
+        "speciality": "Astronomy shows and space education.",
+        "zone": "Central Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3654,
+          22.5283
+        ]
+      },
+      "id": "35",
+      "properties": {
+        "best_time": "Daytime",
+        "category": "Science & Family",
+        "description": "BITM offers scientific demonstrations, interactive exhibits and educational galleries.",
+        "id": 36,
+        "latitude": 22.5283,
+        "longitude": 88.3654,
+        "name": "Birla Industrial and Technological Museum",
+        "speciality": "Interactive science and technology museum.",
+        "zone": "South Kolkata"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4722,
+          22.599799999999995
+        ]
+      },
+      "id": "36",
+      "properties": {
+        "best_time": "Afternoon or Evening",
+        "category": "Museum & Family",
+        "description": "Mother's Wax Museum is a popular New Town attraction featuring wax statues of famous personalities.",
+        "id": 37,
+        "latitude": 22.5998,
+        "longitude": 88.4722,
+        "name": "Mother's Wax Museum",
+        "speciality": "Wax figures of famous personalities.",
+        "zone": "New Town"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4211,
+          22.57069999999999
+        ]
+      },
+      "id": "37",
+      "properties": {
+        "best_time": "Winter or Evening",
+        "category": "Amusement Park",
+        "description": "Nicco Park is one of the most popular amusement parks in Kolkata with rides and entertainment facilities.",
+        "id": 38,
+        "latitude": 22.5707,
+        "longitude": 88.4211,
+        "name": "Nicco Park",
+        "speciality": "Popular amusement park with rides and family entertainment.",
+        "zone": "Salt Lake"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4198,
+          22.5705
+        ]
+      },
+      "id": "38",
+      "properties": {
+        "best_time": "Summer Daytime",
+        "category": "Water Park",
+        "description": "Wet-O-Wild is a popular water recreation attraction associated with the Nicco Park complex.",
+        "id": 39,
+        "latitude": 22.5705,
+        "longitude": 88.4198,
+        "name": "Wet-O-Wild",
+        "speciality": "Water rides and aquatic recreation.",
+        "zone": "Salt Lake"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4662,
+          22.5618
+        ]
+      },
+      "id": "39",
+      "properties": {
+        "best_time": "Summer",
+        "category": "Water Park",
+        "description": "Aquatica is one of the major water parks in the Kolkata metropolitan region.",
+        "id": 40,
+        "latitude": 22.5618,
+        "longitude": 88.4662,
+        "name": "Aquatica Water Park",
+        "speciality": "Large water park with pools, water slides and recreation.",
+        "zone": "New Town"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.3605,
+          22.5778
+        ]
+      },
+      "id": "40",
+      "properties": {
+        "id": 41,
+        "name": "Zakaria Street",
+        "category": "Food & Lifestyle",
+        "zone": "Central Kolkata",
+        "speciality": "Kolkata's famous evening and Ramadan food street, known for biryani, kebabs and rich night-time food culture.",
+        "description": "Zakaria Street is one of Kolkata's most vibrant food corridors. The area becomes especially lively in the evening and festive seasons, drawing visitors for biryani, kebabs, sweets and the old-city atmosphere.",
+        "best_time": "Evening and Night",
+        "latitude": 22.5778,
+        "longitude": 88.3605
+      }
+    }
+  ]
+};
+
+const defaultPhotos = {
+  heritage: "https://commons.wikimedia.org/wiki/Special:FilePath/Victoria%20Memorial%20Kolkata.jpg?width=1400",
+  culture: "https://commons.wikimedia.org/wiki/Special:FilePath/Indian%20Coffee%20House%2C%20College%20Street%2C%20Kolkata.jpg?width=1400",
+  river: "https://commons.wikimedia.org/wiki/Special:FilePath/The%20Princep%20Ghat.jpg?width=1400",
+  landmark: "https://commons.wikimedia.org/wiki/Special:FilePath/Howrah%20Bridge-%20Kolkata%2C%20Howrah%2C%20West%20Bengal-%20DSC%200007.jpg?width=1400",
+  religious: "https://commons.wikimedia.org/wiki/Special:FilePath/Dakshineswar%20Kali%20Temple.jpg?width=1400",
+  nature: "https://commons.wikimedia.org/wiki/Special:FilePath/Rabindra%20sarobar.jpg?width=1400",
+  science: "https://commons.wikimedia.org/wiki/Special:FilePath/Science%20City%2C%20Kolkata.jpg?width=1400",
+  amusement: "https://commons.wikimedia.org/wiki/Special:FilePath/Nicco%20Park%20Salt%20lake.jpg?width=1400",
+  water: "https://images.unsplash.com/photo-1530053969600-caed2596d242?auto=format&fit=crop&w=1600&q=80",
+  zoo: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1600&q=80",
+  shopping: "https://commons.wikimedia.org/wiki/Special:FilePath/New%20Market%20Kolkata.jpg?width=1400",
+  sport: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1600&q=80"
+};
+
+const placePhotos = {
+  "Victoria Memorial": "https://commons.wikimedia.org/wiki/Special:FilePath/Victoria%20Memorial%20Kolkata.jpg?width=1400",
+  "Indian Museum": "https://commons.wikimedia.org/wiki/Special:FilePath/Indian%20Museum%2C%20Kolkata.jpg?width=1400",
+  "St. Paul's Cathedral": "https://commons.wikimedia.org/wiki/Special:FilePath/St.%20Paul%27s%20Cathedral%20Kolkata.jpg?width=1400",
+  "Marble Palace": "https://commons.wikimedia.org/wiki/Special:FilePath/Marble%20Palace%20Kolkata.jpg?width=1400",
+  "Jorasanko Thakurbari": "https://commons.wikimedia.org/wiki/Special:FilePath/Jorasanko%20Thakur%20Bari.jpg?width=1400",
+  "Prinsep Ghat": "https://commons.wikimedia.org/wiki/Special:FilePath/The%20Princep%20Ghat.jpg?width=1400",
+  "Babughat": "https://commons.wikimedia.org/wiki/Special:FilePath/Babu%20ghat%20Kolkata.jpg?width=1400",
+  "Outram Ghat": "https://commons.wikimedia.org/wiki/Special:FilePath/Outram%20Ghat%20Kolkata.jpg?width=1400",
+  "Howrah Bridge": "https://commons.wikimedia.org/wiki/Special:FilePath/Howrah%20Bridge-%20Kolkata%2C%20Howrah%2C%20West%20Bengal-%20DSC%200007.jpg?width=1400",
+  "Vidyasagar Setu": "https://commons.wikimedia.org/wiki/Special:FilePath/Vidyasagar%20Setu%20Kolkata.jpg?width=1400",
+  "Eden Gardens": "https://commons.wikimedia.org/wiki/Special:FilePath/Eden%20Gardens%20Kolkata.jpg?width=1400",
+  "Kalighat Kali Temple": "https://commons.wikimedia.org/wiki/Special:FilePath/Kalighat%20Kali%20Temple.jpg?width=1400",
+  "Dakshineswar Kali Temple": "https://commons.wikimedia.org/wiki/Special:FilePath/Dakshineswar%20Kali%20Temple.jpg?width=1400",
+  "Belur Math": "https://commons.wikimedia.org/wiki/Special:FilePath/Belur%20Math.jpg?width=1400",
+  "Birla Mandir": "https://commons.wikimedia.org/wiki/Special:FilePath/Birla%20Mandir%20Kolkata.jpg?width=1400",
+  "Kumartuli": "https://images.unsplash.com/photo-1607591680804-8db5b89a1f6d?auto=format&fit=crop&w=1600&q=80",
+  "College Street": "https://images.unsplash.com/photo-1518147139396-e4e4e9c0d36f?auto=format&fit=crop&w=1600&q=80",
+  "Indian Coffee House": "https://commons.wikimedia.org/wiki/Special:FilePath/Indian%20Coffee%20House%2C%20College%20Street%2C%20Kolkata.jpg?width=1400",
+  "Park Street": "https://commons.wikimedia.org/wiki/Special:FilePath/Park%20Street%2C%20Kolkata%2C%20India.jpg?width=1400",
+  "New Market": "https://commons.wikimedia.org/wiki/Special:FilePath/New%20Market%20Kolkata.jpg?width=1400",
+  "Rabindra Sarobar": "https://commons.wikimedia.org/wiki/Special:FilePath/Rabindra%20sarobar.jpg?width=1400",
+  "Maidan": "https://commons.wikimedia.org/wiki/Special:FilePath/Kolkata%20Maidan.jpg?width=1400",
+  "Alipore Zoo": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1600&q=80",
+  "Indian Botanic Garden": "https://commons.wikimedia.org/wiki/Special:FilePath/Great%20Banyan%20Tree%20Indian%20Botanic%20Garden.jpg?width=1400",
+  "Eco Park": "https://commons.wikimedia.org/wiki/Special:FilePath/Eco%20Park%20Kolkata.jpg?width=1400",
+  "Science City": "https://commons.wikimedia.org/wiki/Special:FilePath/Science%20City%2C%20Kolkata.jpg?width=1400",
+  "Birla Planetarium": "https://commons.wikimedia.org/wiki/Special:FilePath/Birla%20Planetarium%20Kolkata.jpg?width=1400",
+  "Birla Industrial and Technological Museum": "https://commons.wikimedia.org/wiki/Special:FilePath/BITM%20Kolkata.jpg?width=1400",
+  "Mother's Wax Museum": "https://commons.wikimedia.org/wiki/Special:FilePath/Mother%27s%20Wax%20Museum.jpg?width=1400",
+  "Nicco Park": "https://commons.wikimedia.org/wiki/Special:FilePath/Nicco%20Park%20Salt%20lake.jpg?width=1400",
+  "Wet-O-Wild": "https://images.unsplash.com/photo-1530053969600-caed2596d242?auto=format&fit=crop&w=1600&q=80",
+  "Aquatica Water Park": "https://images.unsplash.com/photo-1530053969600-caed2596d242?auto=format&fit=crop&w=1600&q=80",
+  "Zakaria Street": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80"
+};
+
+const features = touristData.features.slice().sort((a,b)=>Number(a.properties.id)-Number(b.properties.id));
+const categoryMeta = {
+  heritage:{icon:"fa-landmark",label:"Heritage",accent:"#c18a58"},
+  culture:{icon:"fa-utensils",label:"Culture & Food",accent:"#cf7e62"},
+  river:{icon:"fa-water",label:"Ghat & Riverside",accent:"#6daec3"},
+  religious:{icon:"fa-place-of-worship",label:"Religious",accent:"#d09c5b"},
+  nature:{icon:"fa-tree",label:"Parks & Nature",accent:"#7ea96f"},
+  science:{icon:"fa-atom",label:"Science & Museum",accent:"#7aa8d5"},
+  amusement:{icon:"fa-star",label:"Amusement",accent:"#b78d8b"},
+  landmark:{icon:"fa-bridge",label:"Landmarks",accent:"#90a8be"},
+  shopping:{icon:"fa-bag-shopping",label:"Shopping",accent:"#bb8e9d"},
+  sport:{icon:"fa-futbol",label:"Sports",accent:"#89a087"},
+  zoo:{icon:"fa-paw",label:"Zoo & Wildlife",accent:"#b09a65"},
+  water:{icon:"fa-person-swimming",label:"Water Park",accent:"#78a9c1"}
+};
+
+function classify(props){
+  const n=(props.name||"").toLowerCase();
+  const c=(props.category||"").toLowerCase();
+  if(n.includes("zoo")) return "zoo";
+  if(n.includes("zakaria")) return "culture";
+  if(n.includes("kumartuli")) return "culture";
+  if(c.includes("ghat")||c.includes("riverside")) return "river";
+  if(c.includes("science")||c.includes("museum")) return "science";
+  if(c.includes("water park")) return "water";
+  if(c.includes("amusement")) return "amusement";
+  if(c.includes("nature")) return "nature";
+  if(c.includes("food")||n.includes("coffee")||n.includes("park street")) return "culture";
+  if(c.includes("shopping")) return "shopping";
+  if(c.includes("sports")) return "sport";
+  if(c.includes("landmark")) return "landmark";
+  if(c.includes("religious")) return "religious";
+  return "heritage";
+}
+
+function themeText(key){
+  const lookup = {
+    heritage:["Historic Kolkata","Architecture, memory and classic urban heritage."],
+    culture:["Food & Cultural Kolkata","Food trails, books, adda and artistic city life."],
+    river:["River Kolkata","Ghats, Hooghly breeze and evening rituals by the water."],
+    religious:["Spiritual Kolkata","Faith, sacred architecture and devotional atmosphere."],
+    nature:["Green Kolkata","Lakes, gardens and the calm side of the city."],
+    science:["Curious Kolkata","Discovery, science exhibits and a modern learning vibe."],
+    amusement:["Leisure Kolkata","Recreation, rides and family fun."],
+    landmark:["Iconic Kolkata","Bridges, stadiums and city-defining landmarks."],
+    shopping:["Market Kolkata","Shopping streets and classic market culture."],
+    sport:["Sporting Kolkata","Stadium atmosphere and sporting pride."],
+    zoo:["Wildlife Kolkata","Animal encounters and a welcoming zoo experience."],
+    water:["Water Leisure","Splash, slides and cool family recreation."]
+  };
+  return lookup[key] || ["Explore Kolkata","A place-based journey through the city."];
+}
+
+function photoFor(props){
+  return placePhotos[props.name] || defaultPhotos[classify(props)] || defaultPhotos.heritage;
+}
+
+function createIcon(key){
+  const meta = categoryMeta[key] || categoryMeta.heritage;
+  return L.divIcon({
+    className:"",
+    html:`<div style="width:34px;height:34px;border-radius:14px;background:${meta.accent};border:3px solid rgba(255,255,255,.98);box-shadow:0 8px 18px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;color:#fff;"><i class="fa-solid ${meta.icon}" style="font-size:14px"></i></div>`,
+    iconSize:[34,34],
+    iconAnchor:[17,17],
+    popupAnchor:[0,-12]
+  });
+}
+
+const map = L.map("map",{zoomControl:true}).setView([22.5726,88.3639],11);
+const baseStreet = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+const baseDark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap &copy; CARTO"});
+L.control.layers({"Street":baseStreet,"Dark":baseDark},null,{position:"bottomright"}).addTo(map);
+
+let markerRefs = [];
+let currentIndex = 0;
+let selectedHalo = null;
+let routingControl = null;
+let fallbackLine = null;
+let filteredIndexes = features.map((_,i)=>i);
+
+function addMarkers(){
+  markerRefs.forEach(m => map.removeLayer(m));
+  markerRefs = [];
+  filteredIndexes.forEach(featureIndex => {
+    const ft = features[featureIndex];
+    const p = ft.properties;
+    const key = classify(p);
+    const [lon,lat] = ft.geometry.coordinates;
+    const marker = L.marker([lat,lon],{icon:createIcon(key)}).addTo(map);
+    marker.bindTooltip(p.name,{direction:"top",offset:[0,-10]});
+    marker.on("click",()=>showPlace(featureIndex,true));
+    markerRefs.push(marker);
+  });
+}
+
+function buildLegend(){
+  const keys = ["heritage","culture","river","religious","nature","science","amusement","landmark","zoo","shopping"];
+  document.getElementById("legendGrid").innerHTML = keys.map(k => {
+    const m = categoryMeta[k];
+    return `<div class="legend-item"><span class="legend-icon"><i class="fa-solid ${m.icon}"></i></span><span>${m.label}</span></div>`;
+  }).join("");
+}
+
+function clearRoute(){
+  if(routingControl){ map.removeControl(routingControl); routingControl = null; }
+  if(fallbackLine){ map.removeLayer(fallbackLine); fallbackLine = null; }
+}
+
+function drawRoute(fromIndex,toIndex,color){
+  clearRoute();
+  if(fromIndex===toIndex) return;
+  const a=features[fromIndex].geometry.coordinates;
+  const b=features[toIndex].geometry.coordinates;
+  document.getElementById("routePill").textContent = `${features[fromIndex].properties.name} → ${features[toIndex].properties.name}`;
+  if(L.Routing && L.Routing.control){
+    routingControl = L.Routing.control({
+      waypoints:[L.latLng(a[1],a[0]),L.latLng(b[1],b[0])],
+      router:L.Routing.osrmv1({serviceUrl:"https://router.project-osrm.org/route/v1"}),
+      addWaypoints:false,draggableWaypoints:false,routeWhileDragging:false,fitSelectedRoutes:true,showAlternatives:false,createMarker:()=>null,
+      lineOptions:{styles:[{color:"#ffffff",opacity:.95,weight:8},{color:color,opacity:.96,weight:4}]}
+    }).addTo(map);
+    routingControl.on("routingerror",function(){
+      clearRoute();
+      fallbackLine = L.polyline([[a[1],a[0]],[b[1],b[0]]],{color:color,weight:4,dashArray:"8,8"}).addTo(map);
+      map.fitBounds(fallbackLine.getBounds(),{padding:[60,60]});
+    });
+  }
+}
+
+function animationHTML(key, props){
+  if(props.name === "Kumartuli"){
+    return {
+      html:`<div class="scene-durga float-y"><div class="wrap"><div class="crown"></div><div class="face"><div class="bindi"></div><div class="eyeL"></div><div class="eyeR"></div><div class="nose"></div><div class="lip"></div></div></div></div>`,
+      caption:"Durga-inspired pop-up for Kumartuli and idol-making culture."
+    };
+  }
+  if(props.name === "Zakaria Street"){
+    return {
+      html:`<div class="scene-zakaria float-y"><div class="wrap"><div class="neon">Zakaria</div><div class="skewer"><div class="ball k1"></div><div class="ball k2"></div><div class="ball k3"></div><div class="ball k4"></div></div><div class="tray"></div></div></div>`,
+      caption:"Night food-street animation inspired by Zakaria Street."
+    };
+  }
+  if(key === "culture"){
+    return {
+      html:`<div class="scene-biryani float-y"><div class="bowl"><div class="steam s1"></div><div class="steam s2"></div><div class="steam s3"></div><div class="rice"></div><div class="base"></div></div></div>`,
+      caption:"3D-style food animation with steam for the foodie section."
+    };
+  }
+  if(key === "river"){
+    return {
+      html:`<div class="scene-diya float-y"><div class="ring"></div><div class="lamp"><div class="spark s1"></div><div class="spark s2"></div><div class="spark s3"></div><div class="flame"></div><div class="bowl"></div></div></div>`,
+      caption:"Aarti-inspired animated diya for riverside and ghat experiences."
+    };
+  }
+  if(key === "zoo"){
+    return {
+      html:`<div class="scene-panda float-y"><div class="wrap"><div class="speech">Welcome to Zoo</div><div class="ear"></div><div class="ear2"></div><div class="head"><div class="eye"></div><div class="eye2"></div><div class="nose"></div><div class="mouth"></div></div><div class="paw"></div></div></div>`,
+      caption:"Friendly welcome animation for the zoo section."
+    };
+  }
+  if(key === "science"){
+    return {
+      html:`<div class="scene-atom"><div class="atom"><div class="orbit"><div class="electron"></div></div><div class="orbit2"></div><div class="orbit3"></div><div class="center"></div></div></div>`,
+      caption:"Smooth atom-style motion for science and museum locations."
+    };
+  }
+  if(key === "nature"){
+    return {
+      html:`<div class="scene-park"><div class="sun"></div><div class="hill"></div><div class="hill h2"></div><div class="tree"></div></div><div class="scene-leaf"><div class="leaf l1">🍃</div><div class="leaf l2">🌿</div><div class="leaf l3">🍂</div></div>`,
+      caption:"Green-space animation with a calm park atmosphere."
+    };
+  }
+  if(key === "heritage"){
+    return {
+      html:`<div class="scene-heritage float-y"><div class="arch"></div></div>`,
+      caption:"Classic architectural arch motif for heritage places."
+    };
+  }
+  if(key === "landmark" || key === "sport"){
+    const icon = key === "sport" ? "fa-futbol" : "fa-bridge";
+    return {
+      html:`<div class="scene-wave"><div class="line l1"></div><div class="line l2"></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:48px"><i class="fa-solid ${icon}"></i></div></div>`,
+      caption:"Refined motion graphic highlighting city-scale landmarks."
+    };
+  }
+  return {
+    html:`<div class="scene-wave"><div class="line l1"></div><div class="line l2"></div></div>`,
+    caption:"Smooth section animation for this Kolkata experience."
+  };
+}
+
+function travelText(props){
+  const key = classify(props);
+  if(props.name === "Prinsep Ghat") return "Ideal in the late afternoon. The riverside route becomes especially attractive near sunset.";
+  if(props.name === "Kumartuli") return "Visit before Durga Puja for the most vibrant artisan activity and idol-making scenes.";
+  if(props.name === "Zakaria Street") return "Evening is best for the full food-street atmosphere, especially during festive periods.";
+  if(key === "culture") return "Best explored in the evening for food, adda and a stronger Kolkata city-life vibe.";
+  if(key === "river") return "Sunset and early evening are the best times for the river ambience and photography.";
+  if(key === "nature") return "Early morning or late afternoon offers a calmer and greener experience.";
+  if(key === "science") return "Plan a daytime visit for exhibits, shows and better indoor activity timing.";
+  if(key === "zoo") return "Morning hours usually provide a more comfortable zoo visit and active animal viewing.";
+  return "Use the route line on the map to continue the story from one place to the next.";
+}
+
+function showPlace(index, withRoute){
+  const prev = currentIndex;
+  currentIndex = index;
+  const ft = features[index];
+  const p = ft.properties;
+  const key = classify(p);
+  const meta = categoryMeta[key] || categoryMeta.heritage;
+  const [title, quote] = themeText(key);
+
+  document.documentElement.style.setProperty("--accent", meta.accent);
+  document.getElementById("experienceName").textContent = title;
+  document.getElementById("heroLabel").textContent = meta.label;
+  document.getElementById("heroQuote").textContent = quote;
+  document.getElementById("counter").textContent = `${index+1} / ${features.length}`;
+  document.getElementById("categoryText").textContent = p.category || "";
+  document.getElementById("placeName").textContent = p.name || "";
+  document.getElementById("zone").textContent = p.zone || "";
+  document.getElementById("speciality").textContent = p.speciality || "";
+  document.getElementById("description").textContent = p.description || "";
+  document.getElementById("bestTime").textContent = p.best_time || "";
+  document.getElementById("coordinates").textContent = `${Number(p.latitude).toFixed(4)}, ${Number(p.longitude).toFixed(4)}`;
+  document.getElementById("travelCaption").textContent = travelText(p);
+
+  const img = document.getElementById("heroImage");
+  const photo = photoFor(p);
+  img.onerror = function(){ this.onerror = null; this.src = defaultPhotos[key] || defaultPhotos.heritage; };
+  img.src = photo;
+  document.getElementById("photoLink").href = photo;
+
+  const anim = animationHTML(key, p);
+  document.getElementById("animScene").innerHTML = anim.html;
+  document.getElementById("animCaption").textContent = anim.caption;
+
+  const [lon, lat] = ft.geometry.coordinates;
+  if(selectedHalo) map.removeLayer(selectedHalo);
+  selectedHalo = L.circleMarker([lat,lon], {
+    radius:18,color:"#fff",weight:2,fillColor:meta.accent,fillOpacity:.28
+  }).addTo(map);
+
+  map.flyTo([lat, lon], 14, {duration:1.0});
+  if(withRoute && prev !== index){ drawRoute(prev, index, meta.accent); }
+}
+
+function goNext(step){
+  const pool = filteredIndexes.length ? filteredIndexes : features.map((_,i)=>i);
+  const pos = pool.indexOf(currentIndex);
+  const nextPos = (pos + step + pool.length) % pool.length;
+  showPlace(pool[nextPos], true);
+}
+
+document.getElementById("nextBtn").addEventListener("click", ()=>goNext(1));
+document.getElementById("prevBtn").addEventListener("click", ()=>goNext(-1));
+document.getElementById("searchInput").addEventListener("keydown", function(e){
+  if(e.key !== "Enter") return;
+  const q = this.value.trim().toLowerCase();
+  if(!q) return;
+  const idx = features.findIndex(ft => (ft.properties.name || "").toLowerCase().includes(q));
+  if(idx >= 0) showPlace(idx, true);
+});
+document.getElementById("categoryFilter").addEventListener("change", function(){
+  const val = this.value;
+  filteredIndexes = features.map((ft,i)=>({ft, i})).filter(obj => {
+    const p = obj.ft.properties;
+    const key = classify(p);
+    if(val === "all") return true;
+    if(val === "Heritage") return key === "heritage";
+    if(val === "Culture") return key === "culture";
+    if(val === "Ghat & Riverside") return key === "river";
+    if(val === "Religious") return key === "religious";
+    if(val === "Nature") return key === "nature" || key === "zoo";
+    if(val === "Science") return key === "science";
+    if(val === "Amusement") return key === "amusement" || key === "water";
+    if(val === "Landmark") return key === "landmark" || key === "sport";
+    return true;
+  }).map(obj => obj.i);
+  addMarkers();
+  if(filteredIndexes.length) showPlace(filteredIndexes[0], false);
+});
+
+buildLegend();
+addMarkers();
+showPlace(0, false);
+</script>
+</body>
+</html>
